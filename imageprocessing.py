@@ -9,10 +9,8 @@ Created on Tue Feb 21 16:01:24 2023
 import bm3d
 import cv2
 import numpy as np
-from matplotlib import pyplot as plt
 from skimage import img_as_float, img_as_ubyte
-from skimage.filters import sobel, unsharp_mask
-from skimage.restoration import denoise_tv_chambolle, denoise_nl_means
+from skimage.restoration import denoise_tv_chambolle
 import os
 
 ### Functions to perform their process on img
@@ -20,37 +18,40 @@ import os
 def bilateral(in_img):
     try:
         kernel_size = int(input('Kernel Size (int): '))
-        sigma_color_int = int(input('Sigma Color Int (spatial weighting) (0 to 255): '))
-        sigma_space_int = int(input('Sigma Space Int (range weighting) (0 to 255): '))
+        sigma_color_int = float(input('Sigma Color Int (spatial weighting)(0 to 1): '))
+        sigma_space_int = float(input('Sigma Space Int (range weighting)(0 to 1): '))
         out_img = cv2.bilateralFilter(in_img, kernel_size, sigma_color_int, sigma_space_int, borderType = cv2.BORDER_CONSTANT)
         return out_img
     except:
         print('ERROR')
+        bilateral(in_img)
         
 def bm3d_func(in_img):
-    in_img = img_as_float(in_img)
     try: 
         sigma_psd_input = float(input('Noise Standard Deviation (0 to 1): '))
-        stage = ''
-        while not (stage == 'A' or stage == 'H'):
+        stage_arg_input = ''
+        while stage_arg_input == '':
             stage = input('All Stages (A) or Hard Thresholding (H): ')
             if stage == 'A':
-                out_img = img_as_ubyte(bm3d.bm3d(in_img, sigma_psd = sigma_psd_input, stage_arg = bm3d.BM3DStages.ALL_STAGES))
+                stage_arg_input = 'BM3DStages.ALL_STAGES'
             elif stage == 'H':
-                out_img = img_as_ubyte(bm3d.bm3d(in_img, sigma_psd = sigma_psd_input, stage_arg = bm3d.BM3DStages.HARD_THRESHOLDING))
+                stage_arg_input = 'BM3DStages.HARD_THRESHOLDING' 
+        out_img = bm3d.bm3d(in_img, sigma_psd = sigma_psd_input, stage_arg = stage_arg_input)
         return out_img
     except:
         print('ERROR')
+        bm3d_func(in_img)
         
 def canny(in_img):
     try:    
-        lower_threshold = int(input('Lower Threshold (0 to 255): '))
-        upper_threshold = int(input('Upper Threshold (0 to 255): '))
+        lower_threshold = float(input('Lower Threshold (0 to 1): '))
+        upper_threshold = float(input('Upper Threshold (0 to 1): '))
         in_img = cv2.cvtColor(in_img, cv2.COLOR_BGR2GRAY)
         out_img = cv2.Canny(in_img, lower_threshold, upper_threshold)
         return out_img
     except:
         print('ERROR')
+        canny(in_img)
 
 def channel_isolation(in_img):
     channel = -1
@@ -65,10 +66,12 @@ def channel_isolation(in_img):
 def gaussian(in_img):
     try:
         kernel_size = int(input('Kernel Size (int): '))
-        out_img = cv2.GaussianBlur(in_img, (kernel_size, kernel_size), 0, borderType = cv2.BORDER_CONSTANT)
+        sigma = float(input('Sigma (0 to 1): '))
+        out_img = cv2.GaussianBlur(in_img, (kernel_size, kernel_size), sigma, borderType = cv2.BORDER_CONSTANT)
         return out_img
     except:
         print('ERROR')
+        gaussian(in_img)
 
 def gray(in_img):
     out_img = cv2.cvtColor(in_img, cv2.COLOR_BGR2GRAY)
@@ -81,19 +84,18 @@ def median(in_img):
         return out_img
     except:
         print('ERROR')
+        median(in_img)
         
 def non_local_means(in_img):
     try:
-        in_img = img_as_float(in_img)
-        
-        h_input = float(input('Filter Strength (0 to 1): '))
-        patch_size_input = int(input('Patch Size (num of pixels) (should be odd) (e.g. 7): '))
-        patch_distance_input = int(input('Patch Distance (num of pixels) (should be odd) (e.g. 21): '))
-        out_img = denoise_nl_means(in_img, h=h_input, fast_mode=True, patch_size=patch_size_input, patch_distance=patch_distance_input, channel_axis=True)
-        out_img = img_as_ubyte(out_img)
+        h = float(input('Filter Strength (float): '))
+        template_window_size = int(input('Template Window Size (num of pixels) (should be odd) (e.g. 7): '))
+        search_window_size = int(input('Search Window Size (num of pixels) (should be odd) (e.g. 21): '))
+        out_img = cv2.fastNlMeansDenoisingColored(in_img, None, h, h, template_window_size, search_window_size)
         return out_img
     except:
         print('ERROR')
+        non_local_means(in_img)
         
 def rescale(in_img):
     try:
@@ -103,16 +105,15 @@ def rescale(in_img):
         return out_img
     except:
         print('ERROR')
+        rescale(in_img)
 
-def sobel_func(in_img):
+def sobel(in_img):
     in_img = gray(in_img)
-    out_img = sobel(in_img)
+    out_img = cv2.Sobel(in_img, None, -1, 1, 1)
     return out_img
 
 def total_variation(in_img):
     try:
-        in_img = img_as_float(in_img)
-        
         weight_input = float(input('Weight (0 to 1): '))
         eps_input = float(input('Passable Error (e.g. 0.0002): '))
         n_inter_max_input = int(input('Maximum # of Iterations: '))
@@ -128,20 +129,21 @@ def total_variation(in_img):
                 multichannel_input = False
                 correct_input = True
         
-        out_img = denoise_tv_chambolle(in_img, weight = weight_input, eps = eps_input, max_num_iter = n_inter_max_input, channel_axis = multichannel_input)
-        out_img = img_as_ubyte(out_img)
+        out_img = denoise_tv_chambolle(in_img, weight = weight_input, eps = eps_input, max_num_iter = n_inter_max_input, multichannel = multichannel_input)
         return out_img
     except: 
         print('ERROR')
+        total_variation(in_img)
         
-def unsharp_mask_func(in_img):
+def unsharp_mask(in_img):
     try:
-        amount_input = float(input('Mask Multiplication Factor (e.g. 2): '))
-        kernel_size = int(input('Kernel Size (int): '))
-        out_img = img_as_ubyte(unsharp_mask(in_img, radius=kernel_size, amount=amount_input))
+        amount = float(input('Mask Multiplication Factor (e.g. 2): '))
+        mask = (in_img - gaussian(in_img)) * amount
+        out_img = in_img + mask
         return out_img
     except:
         print('ERROR')
+        unsharp_mask(in_img)   
 
 processes = ['bilateral', 'bm3d', 'canny', 'channel isolation', 'gaussian', 'gray', 'median', 'non-local means', 'rescale', 'sobel', 'total variation', 'unsharp mask']
 image_list = os.listdir('/Users/cobeliu/ImageProcessing/images')
@@ -152,7 +154,7 @@ image = ''
 ### Get image and process from user
 
 while not image in image_list:
-    image = input('Image (input o to see options): ')
+    image = input('Image (input o to see options)(image processed as float): ')
     if image == 'o':
         for item in image_list:
             print(item)
@@ -163,7 +165,7 @@ while not process in processes:
         for item in processes:
             print(item)
 
-img = cv2.imread('images/' + image)
+img = img_as_float(cv2.imread('images/' + image))
 
 ### process image
 
@@ -187,40 +189,17 @@ elif process == 'non-local means':
 elif process == 'rescale':
     processed_img = rescale(img)
 elif process == 'sobel':
-    processed_img = sobel_func(img)
+    processed_img = sobel(img)
 elif process == 'total variation':
     processed_img = total_variation(img)
 elif process == 'unsharp mask':
-    processed_img = unsharp_mask_func(img)
-
-img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-if img.shape == processed_img.shape:
-    processed_img = cv2.cvtColor(processed_img, cv2.COLOR_BGR2RGB)
+    processed_img = unsharp_mask(img)
 
 ### show image
+processed_img = img_as_ubyte(processed_img)
+img = img_as_ubyte(img)
 
-fig = plt.figure(figsize = (10, 10))
-
-ax1 = fig.add_subplot(3, 3, 1)
-ax1.imshow(img)
-ax1.title.set_text('Original Image')
-
-ax2 = fig.add_subplot(3, 3, 2)
-ax2.imshow(processed_img)
-ax2.title.set_text('Processed Image')
-
-plt.show
-
-## save image if user prompts
-
-save_img_bool = ''
-while not (save_img_bool == 'y' or save_img_bool == 'n'):
-    save_img_bool = input('Do you want to save processed image? (y/n) ')
-    
-if save_img_bool == 'y':
-    if img.shape == processed_img.shape:
-        processed_img = cv2.cvtColor(processed_img, cv2.COLOR_RGB2BGR)
-        
-    save_img_name = input('Saved image name (name.file_type): ')
-    cv2.imwrite('/Users/cobeliu/ImageProcessing/images/' + save_img_name, processed_img)
-
+cv2.imshow('Original Image', img)
+cv2.imshow('Processed Image', img)
+cv2.waitKey(0)
+cv2.destroyAllWindows()
