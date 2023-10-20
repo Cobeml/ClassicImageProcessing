@@ -8,7 +8,6 @@ Created on Tue Feb 21 16:01:24 2023
 
 import bm3d
 import cv2
-import numpy as np
 from skimage import img_as_float, img_as_ubyte
 from skimage.restoration import denoise_tv_chambolle
 import os
@@ -24,7 +23,6 @@ def bilateral(in_img):
         return out_img
     except:
         print('ERROR')
-        bilateral(in_img)
         
 def bm3d_func(in_img):
     try: 
@@ -40,7 +38,6 @@ def bm3d_func(in_img):
         return out_img
     except:
         print('ERROR')
-        bm3d_func(in_img)
         
 def canny(in_img):
     try:    
@@ -51,7 +48,6 @@ def canny(in_img):
         return out_img
     except:
         print('ERROR')
-        canny(in_img)
 
 def channel_isolation(in_img):
     channel = -1
@@ -71,7 +67,6 @@ def gaussian(in_img):
         return out_img
     except:
         print('ERROR')
-        gaussian(in_img)
 
 def gray(in_img):
     out_img = cv2.cvtColor(in_img, cv2.COLOR_BGR2GRAY)
@@ -84,8 +79,7 @@ def median(in_img):
         return out_img
     except:
         print('ERROR')
-        median(in_img)
-        
+
 def non_local_means(in_img):
     try:
         h = float(input('Filter Strength (float): '))
@@ -95,7 +89,6 @@ def non_local_means(in_img):
         return out_img
     except:
         print('ERROR')
-        non_local_means(in_img)
         
 def rescale(in_img):
     try:
@@ -105,7 +98,6 @@ def rescale(in_img):
         return out_img
     except:
         print('ERROR')
-        rescale(in_img)
 
 def sobel(in_img):
     in_img = gray(in_img)
@@ -133,7 +125,6 @@ def total_variation(in_img):
         return out_img
     except: 
         print('ERROR')
-        total_variation(in_img)
         
 def unsharp_mask(in_img):
     try:
@@ -142,8 +133,7 @@ def unsharp_mask(in_img):
         out_img = in_img + mask
         return out_img
     except:
-        print('ERROR')
-        unsharp_mask(in_img)   
+        print('ERROR') 
 
 processes = ['bilateral', 'bm3d', 'canny', 'channel isolation', 'gaussian', 'gray', 'median', 'non-local means', 'rescale', 'sobel', 'total variation', 'unsharp mask']
 image_list = os.listdir('/Users/cobeliu/ImageProcessing/images')
